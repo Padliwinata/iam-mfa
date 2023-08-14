@@ -14,6 +14,9 @@ type AuthController struct {
 	DB *gorm.DB
 }
 
+type userHttpHandler struct {
+}
+
 func NewAuthController(DB *gorm.DB) AuthController {
 	return AuthController{DB}
 }
