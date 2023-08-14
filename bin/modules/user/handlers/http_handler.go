@@ -4,15 +4,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Padliwinata/iam-mfa/bin/modules/user/models"
 	"github.com/labstack/echo/v4"
-	"github.com/wpcodevo/two_factor_golang/models"
 
-	// "github.com/pquerna/otp/totp"
 	"gorm.io/gorm"
 )
 
 type AuthController struct {
 	DB *gorm.DB
+}
+
+type userHttpHandler struct {
 }
 
 func NewAuthController(DB *gorm.DB) AuthController {
@@ -65,3 +67,7 @@ func (ac *AuthController) LoginUser(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"status": "success", "user": userResponse})
 }
+
+// func (ac *AuthController) GenerateOTP(ctx echo.Context) error {
+
+// }
