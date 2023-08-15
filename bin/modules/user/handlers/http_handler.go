@@ -6,6 +6,7 @@ import (
 
 	"github.com/Padliwinata/iam-mfa/bin/modules/user/models"
 	"github.com/labstack/echo/v4"
+	"github.com/pquerna/otp/totp"
 
 	"gorm.io/gorm"
 )
@@ -68,6 +69,98 @@ func (ac *AuthController) LoginUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"status": "success", "user": userResponse})
 }
 
-// func (ac *AuthController) GenerateOTP(ctx echo.Context) error {
+func (ac *AuthController) GenerateOTP(c echo.Context) error {
+	var payload *models.OTPInput
 
-// }
+	if err := c.Bind(&payload); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": err.Error()})
+	}
+
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "codevoweb.com",
+		AccountName: "admin@admin.com",
+		SecretSize:  15,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	var user models.User
+	result := ac.DB.First(&user, "id = ?", payload.UserId)
+	if result.Error != nil {
+		return c.JSON(http.StatusOK, map[string]interface{}{"status": "fail", "message": "Invalid email or Password"})
+	}
+
+	dataToUpdate := models.User{
+		Otp_secret:   key.Secret(),
+		Otp_auth_url: key.URL(),
+	}
+
+	ac.DB.Model(&user).Updates(dataToUpdate)
+
+	otpResponse := map[string]interface{}{
+		"base32":      key.Secret(),
+		"otpauth_url": key.URL(),
+	}
+	return c.JSON(http.StatusOK, otpResponse)
+}
+
+func (ac *AuthController) VerifyOTP(c echo.Context) error {
+	var payload *models.OTPInput
+
+	if err := c.Bind(&payload); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": err.Error()})
+	}
+
+	message := "Token is invalid or user doesn't exist"
+
+	var user models.User
+	result := ac.DB.First(&user, "id = ?", payload.UserId)
+	if result.Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": message})
+	}
+
+	valid := totp.Validate(payload.Token, user.Otp_secret)
+	if !valid {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": message})
+	}
+
+	dataToUpdate := models.User{
+		Otp_enabled:  true,
+		Otp_verified: true,
+	}
+
+	ac.DB.Model(&user).Updates(dataToUpdate)
+
+	userResponse := map[string]interface{}{
+		"id":          user.ID.String(),
+		"name":        user.Name,
+		"email":       user.Email,
+		"otp_enabled": user.Otp_enabled,
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"otp_verified": true, "user": userResponse})
+}
+
+func (ac *AuthController) ValidateOTP(c echo.Context) error {
+	var payload models.OTPInput
+
+	if err := c.Bind(&payload); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": err.Error()})
+	}
+
+	message := "Token is invalid or user doesn't exist"
+
+	var user models.User
+	result := ac.DB.First(&user, "id = ?", payload.UserId)
+	if result.Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": message})
+	}
+
+	valid := totp.Validate(payload.Token, user.Otp_secret)
+	if !valid {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"status": "fail", "message": message})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"otp_valid": true})
+}

@@ -11,6 +11,8 @@ require (
 	gorm.io/gorm v1.25.3
 )
 
+require github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
+
 require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/elastic/go-licenser v0.3.1 // indirect
@@ -28,6 +30,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pquerna/otp v1.4.0
 	github.com/prometheus/procfs v0.0.0-20190425082905-87a4384529e0 // indirect
 	github.com/santhosh-tekuri/jsonschema v1.2.4 // indirect
 	github.com/stretchr/testify v1.8.3 // indirect
