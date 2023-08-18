@@ -31,3 +31,9 @@ type OTPInput struct {
 	UserId string `json:"user_id"`
 	Token  string `json:"token"`
 }
+
+type GetUserResponse struct {
+	Id       string `json:"id,omitempty"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
